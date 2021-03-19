@@ -22,7 +22,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { RoughnessMipmapper } from 'three/examples/jsm/utils/RoughnessMipmapper';
 import * as TWEEN from '@tweenjs/tween.js';
 import { DxfEntity } from '../../common/interfaces';
-import { useInitRenderer } from '../../hooks';
+import { useInitRenderer, useInitThree } from '../../hooks';
 import { getDxfDimension } from '../../utils';
 import FloorMapJson from '../../common/sample/floorMap.json';
 import CarModel from '../../common/sample/car.glb';
@@ -41,9 +41,8 @@ type ViewerProps = ComponentPropsWithoutRef<'div'>;
 export const Viewer: React.FC<ViewerProps> = (props) => {
   const viewerCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const { scene, renderer, camera, render } = useInitRenderer(
-    viewerCanvasRef.current
-  );
+  const { scene, renderer, camera, render } =
+    useInitThree(viewerCanvasRef.current) || {};
 
   const orbitControls = useMemo(() => {
     if (!camera || !renderer) return undefined;
@@ -170,7 +169,7 @@ export const Viewer: React.FC<ViewerProps> = (props) => {
       const currentModelX = carModel.position.x;
 
       new TWEEN.Tween(carModel.position)
-        .to({ ...carModel.position, x: currentModelX + 10 }, 1000)
+        .to({ ...carModel.position, x: currentModelX + 20 }, 1000)
         .start()
         .onComplete(() => {
           animationFrameRef.current &&
