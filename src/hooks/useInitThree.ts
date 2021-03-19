@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Camera, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 interface ThreeJsComponents {
   scene?: Scene;
   camera?: Camera;
   renderer?: WebGLRenderer;
-  render: () => void;
+  orbitControls?: OrbitControls;
+  render?: () => void;
 }
 
 export const useInitThree = (
@@ -49,7 +51,12 @@ export const useInitThree = (
      */
     const render = () => renderer.render(scene, camera);
 
-    return { scene, camera, renderer, render };
+    /**
+     * create `orbitControls`
+     */
+    const orbitControls = new OrbitControls(camera, renderer.domElement);
+
+    return { scene, camera, renderer, orbitControls, render };
   }, [isCanvasReady, canvas]);
 
   return threeComponents;

@@ -2,8 +2,6 @@ import React, {
   ComponentPropsWithoutRef,
   useCallback,
   useEffect,
-  useLayoutEffect,
-  useMemo,
   useRef,
 } from 'react';
 import { interval } from 'rxjs';
@@ -18,11 +16,10 @@ import {
   Object3D,
   Vector3,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { RoughnessMipmapper } from 'three/examples/jsm/utils/RoughnessMipmapper';
 import * as TWEEN from '@tweenjs/tween.js';
 import { DxfEntity } from '../../common/interfaces';
-import { useInitRenderer, useInitThree } from '../../hooks';
+import { useInitThree } from '../../hooks';
 import { getDxfDimension } from '../../utils';
 import FloorMapJson from '../../common/sample/floorMap.json';
 import CarModel from '../../common/sample/car.glb';
@@ -41,30 +38,10 @@ type ViewerProps = ComponentPropsWithoutRef<'div'>;
 export const Viewer: React.FC<ViewerProps> = (props) => {
   const viewerCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const { scene, renderer, camera, render } =
+  const { scene, renderer, camera, orbitControls, render } =
     useInitThree(viewerCanvasRef.current) || {};
 
-  const orbitControls = useMemo(() => {
-    if (!camera || !renderer) return undefined;
-
-    return new OrbitControls(camera, renderer.domElement);
-  }, [camera, renderer]);
-
-  const updateCamera = useCallback(() => {
-    if (!orbitControls || !render) return;
-
-    requestAnimationFrame(updateCamera);
-    orbitControls.update();
-    render();
-  }, [orbitControls, render]);
-
-  useLayoutEffect(() => {
-    if (!updateCamera) return;
-
-    updateCamera();
-  }, [updateCamera]);
-
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (
       !viewerCanvasRef.current ||
       !scene ||
