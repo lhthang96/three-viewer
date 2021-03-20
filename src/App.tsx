@@ -1,5 +1,6 @@
 import React from 'react';
 import { Viewer } from './components';
+import 'antd/dist/antd.css';
 
 const App: React.FC = () => {
   return (

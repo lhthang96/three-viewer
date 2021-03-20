@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Camera, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import { Camera, MOUSE, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 interface ThreeJsComponents {
   scene?: Scene;
   camera?: Camera;
   renderer?: WebGLRenderer;
-  orbitControls?: OrbitControls;
+  controls?: OrbitControls;
   render?: () => void;
 }
 
@@ -52,11 +52,18 @@ export const useInitThree = (
     const render = () => renderer.render(scene, camera);
 
     /**
-     * create `orbitControls`
+     * create `controls`
      */
-    const orbitControls = new OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.addEventListener('change', render);
+    controls.mouseButtons = {
+      LEFT: MOUSE.PAN,
+      MIDDLE: MOUSE.DOLLY,
+      RIGHT: MOUSE.ROTATE,
+    };
+    // window.addEventListener('resize', onWindowResize);
 
-    return { scene, camera, renderer, orbitControls, render };
+    return { scene, camera, renderer, controls, render };
   }, [isCanvasReady, canvas]);
 
   return threeComponents;

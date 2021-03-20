@@ -7,26 +7,23 @@ import React, {
 import { interval } from 'rxjs';
 import {
   AmbientLight,
-  AnimationMixer,
   BufferGeometry,
-  Clock,
   Group,
   Line,
   LineBasicMaterial,
   Object3D,
+  Scene,
   Vector3,
+  WebGLRenderer,
 } from 'three';
-import { RoughnessMipmapper } from 'three/examples/jsm/utils/RoughnessMipmapper';
 import * as TWEEN from '@tweenjs/tween.js';
 import { DxfEntity } from '../../common/interfaces';
 import { useInitThree } from '../../hooks';
 import { getDxfDimension } from '../../utils';
 import FloorMapJson from '../../common/sample/floorMap.json';
-import CarModel from '../../common/sample/car.glb';
 import { StyledViewerCanvas, StyledViewerContainer } from './Viewer.styles';
-import { getThree3DModel } from '../../utils/three';
-
-const SAMPLE_CAR_ID = 'SAMPLE_CAR_ID';
+import { onLoadModel } from '../../utils';
+import { MOCK_MODELS } from './mock';
 
 const sampleDxfEntities = FloorMapJson as DxfEntity[];
 const { lowerLeft, upperRight } = getDxfDimension(sampleDxfEntities);
@@ -38,16 +35,19 @@ type ViewerProps = ComponentPropsWithoutRef<'div'>;
 export const Viewer: React.FC<ViewerProps> = (props) => {
   const viewerCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const { scene, renderer, camera, orbitControls, render } =
+  const { scene, renderer, camera, controls, render } =
     useInitThree(viewerCanvasRef.current) || {};
 
+  /**
+   * Init static scene
+   */
   useEffect(() => {
     if (
       !viewerCanvasRef.current ||
       !scene ||
       !camera ||
       !renderer ||
-      !orbitControls ||
+      !controls ||
       !render
     )
       return;
@@ -58,7 +58,7 @@ export const Viewer: React.FC<ViewerProps> = (props) => {
     const centerX = (maxX - minX) / 2;
     const centerY = (maxY - minY) / 2;
     camera.position.set(centerX, centerY, 1000);
-    orbitControls.target.set(centerX, centerY, 0);
+    controls.target.set(centerX, centerY, 0);
 
     // Global light
     const ambientLight = new AmbientLight(0xffffff);
@@ -100,65 +100,77 @@ export const Viewer: React.FC<ViewerProps> = (props) => {
 
     scene.add(rootObject);
     render();
-  }, [scene, camera, renderer, orbitControls, render]);
+  }, [scene, camera, renderer, controls, render]);
 
-  // Handle animation
-  const animationFrameRef = useRef<number>();
-  const mixer = useRef<AnimationMixer>();
-  const clock = useRef(new Clock());
-  const animate = useCallback((): void => {
-    if (!render) return undefined;
+  /**
+   * Handle object moving animation
+   */
+  const animationFrameRef = useRef<{ [name: string]: number }>({});
+  const animate = useCallback(
+    (name: string): void => {
+      if (!render) return undefined;
+      const requestFrameId = requestAnimationFrame(() => animate(name));
+      animationFrameRef.current[name] = requestFrameId;
 
-    const requestFrameId = requestAnimationFrame(animate);
-    animationFrameRef.current = requestFrameId;
+      TWEEN.update();
+      render();
+    },
+    [render]
+  );
 
-    TWEEN.update();
-    render();
-    mixer.current?.update(clock.current.getDelta());
-  }, [render]);
+  const onLoadMockModels = (scene: Scene, renderer: WebGLRenderer): void => {
+    MOCK_MODELS.forEach(({ url, name }) => {
+      onLoadModel(url, renderer).then(({ gltf }) => {
+        if (!gltf) return;
+
+        gltf.scene.name = name;
+        gltf.scene.scale.set(0.12, 0.12, 0.12);
+        gltf.scene.rotateX(Math.PI / 2);
+
+        scene.add(gltf.scene);
+      });
+    });
+  };
 
   useEffect(() => {
     if (!renderer || !scene || !animate) return;
 
-    const roughnessMipmapper = new RoughnessMipmapper(renderer);
-    getThree3DModel(CarModel).then((gltf) => {
-      gltf.scene.name = SAMPLE_CAR_ID;
-      gltf.scene.scale.set(0.12, 0.12, 0.12);
-      gltf.scene.rotateX(Math.PI / 2);
-      scene.add(gltf.scene);
-      roughnessMipmapper.dispose();
-
-      mixer.current = new AnimationMixer(gltf.scene);
-      const clips = gltf.animations;
-      clips.forEach((clip) => {
-        mixer.current?.clipAction(clip).play();
-      });
-
-      animate();
-    });
+    onLoadMockModels(scene, renderer);
 
     const subscription = interval(1000).subscribe(() => {
-      const carModel = scene.getObjectByName(SAMPLE_CAR_ID);
+      MOCK_MODELS.forEach(({ name, velocity }, index) => {
+        const carModel = scene.getObjectByName(name);
 
-      if (!carModel) return;
+        if (!carModel) return;
 
-      if (carModel.position.x > maxX - minX) carModel.position.x = 0;
-      const currentModelX = carModel.position.x;
+        carModel.position.y = lowerLeft.y + 240 + 60 * index;
 
-      new TWEEN.Tween(carModel.position)
-        .to({ ...carModel.position, x: currentModelX + 20 }, 1000)
-        .start()
-        .onComplete(() => {
-          animationFrameRef.current &&
-            cancelAnimationFrame(animationFrameRef.current);
-        });
-      animate();
+        if (carModel.position.x > maxX - minX) carModel.position.x = 0;
+        const currentModelX = carModel.position.x;
+
+        new TWEEN.Tween(carModel.position)
+          .to(
+            {
+              ...carModel.position,
+              x: currentModelX + velocity,
+            },
+            1000
+          )
+          .onComplete(() => {
+            animationFrameRef.current[name] &&
+              cancelAnimationFrame(animationFrameRef.current[name]);
+          })
+          .start();
+
+        animate(name);
+      });
     });
 
     return (): void => {
       subscription.unsubscribe();
-      animationFrameRef.current &&
-        cancelAnimationFrame(animationFrameRef.current);
+      Object.keys(animationFrameRef.current).forEach((name) => {
+        cancelAnimationFrame(animationFrameRef.current[name]);
+      });
     };
   }, [renderer, scene, animate, render]);
 

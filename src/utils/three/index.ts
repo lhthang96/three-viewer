@@ -1,1 +1,1 @@
-export * from './getThree3DModel';
+export * from './onLoadModel';
