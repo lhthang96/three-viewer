@@ -7,55 +7,10 @@ interface Model3D {
 }
 
 const SAMPLE_CAR_ID = 'SAMPLE_CAR_ID';
-export const MOCK_MODELS: Model3D[] = [
-  {
+
+export const getNumberOfMockModels = (number: number): Model3D[] =>
+  Array.from(Array(number).keys()).map((_, index) => ({
     url: CarModel,
-    name: `${SAMPLE_CAR_ID}1`,
+    name: `${SAMPLE_CAR_ID}${index}`,
     velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}2`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}3`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}4`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}5`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}6`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}7`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}8`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}9`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-  {
-    url: CarModel,
-    name: `${SAMPLE_CAR_ID}10`,
-    velocity: Math.floor(Math.random() * 80 + 20),
-  },
-];
+  }));

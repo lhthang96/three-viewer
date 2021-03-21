@@ -23,7 +23,9 @@ import { getDxfDimension } from '../../utils';
 import FloorMapJson from '../../common/sample/floorMap.json';
 import { StyledViewerCanvas, StyledViewerContainer } from './Viewer.styles';
 import { onLoadModel } from '../../utils';
-import { MOCK_MODELS } from './mock';
+import { getNumberOfMockModels } from './mock';
+
+const MOCK_MODELS = getNumberOfMockModels(5);
 
 const sampleDxfEntities = FloorMapJson as DxfEntity[];
 const { lowerLeft, upperRight } = getDxfDimension(sampleDxfEntities);
